@@ -1,6 +1,6 @@
 {
   "name": "metasite-hammer",
-  "version": "1.0.0",
+  "version": "1.0.4",
   "description": "A metanet tool to upload static website to blockchain.",
   "main": "Index.js",
   "scripts": {
@@ -28,7 +28,8 @@
     "bitcoin-ibe": "^1.2.2",
     "bitcore-explorers": "^1.0.1",
     "bsv": "^0.24.8",
-    "mime": "^2.4.0",
+    "mime-db": "^1.38.0",
+    "mime-lookup": "0.0.2",
     "node-fetch": "^2.3.0"
   }
 }

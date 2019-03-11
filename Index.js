@@ -4,10 +4,18 @@ const explorer = require('bitcore-explorers')
 const Insight = explorer.Insight
 const insight = new explorer.Insight('https://api.bitindex.network')
 const bsv = require('bsv')
-const mime = require('mime')
+const MimeLookup = require('mime-lookup');
+const mime = new MimeLookup(require('mime-db'));
 const ibe = require('bitcoin-ibe')
 const fetch = require('node-fetch')
 
+bsv.PrivateKey.prototype.childKey = function (id, harden) {
+  return ibe.CKDpriv_add(this, id, harden)
+}
+
+bsv.PublicKey.prototype.childKey = function (id, harden) {
+  return ibe.CKDpub_add(this, id, harden)
+}
 
 function Hammer(opts){
   if (!(this instanceof Hammer)) {
@@ -32,20 +40,20 @@ function Hammer(opts){
 }
 
 Hammer.prototype.throwout = function(){
-    console.log("Indexing files in " + this.path)
+    console.log("[+]Indexing files in " + this.path)
     this.index().then(()=>{
-        console.log("Searching existing files on blockchain")
+        console.log("[+]Searching existing files on blockchain")
         return this.reduceSitemap()
     }).then(()=>{
-        console.log("Building upload transactions")
+        console.log("[+]Building upload transactions")
         return this.build()
     }).then(()=>{
-        console.log("Saving Sitemap to sitemap.json")
+        console.log("[+]Saving Sitemap to sitemap.json")
         this.saveSitemap()
-        console.log("Broadcasting upload transactions")
+        console.log("[+]Broadcasting upload transactions")
         return this.broadcast()
     }).then(()=>{
-        console.log("Hammer Threw")
+        console.log("[+]Hammer Threw")
     }).catch((err)=>{
         console.log(err)
     })
@@ -73,7 +81,7 @@ Hammer.prototype.broadcast = function(){
         if(this.fileTXs.length<1)reject("No broadcast needed")
         insight.broadcast(this.maptx.toString(),(err,res)=>{
             if(err){
-                console.log("Insight API return Errors: ")
+                console.log(" Insight API return Errors: ")
                 console.log(err)
                 reject("Insight API return Errors: " + err)
             }else resolve()
@@ -81,16 +89,16 @@ Hammer.prototype.broadcast = function(){
     }).then(()=>{
         return Promise.all(this.fileTXs.map((fileTX)=>{
                 return new Promise((resolve,reject)=>{
-                    console.log("Broadcasting "+fileTX.hash)
+                    console.log(" Broadcasting "+fileTX.hash)
                     insight.broadcast(fileTX.toString(),(err,res)=>{
                         if(err){
-                            console.log("Insight API return Errors")
-                            console.log("You may want to upload/replace fileTX:"+fileTX.hash)
+                            console.log(" Insight API return Errors")
+                            console.log(" You may want to upload/replace fileTX:"+fileTX.hash)
                             //fs.writeFileSync(fileTX.hash,fileTX.toString())
                             this.unBroadcastedTXs.push({TXID:fileTX.hash,TX:fileTX.toString(),reason:err.message})
                             resolve()
                         }else{
-                            console.log(fileTX.hash + " Broadcasted")
+                            console.log(" " + fileTX.hash + " Broadcasted")
                             resolve()
                         }
                     })
@@ -99,9 +107,9 @@ Hammer.prototype.broadcast = function(){
         )
     }).then(()=>{
         if(this.unBroadcastedTXs.length>0){
-            console.log("unBroadcasted TX: "+this.unBroadcastedTXs.length)
+            console.log(" unBroadcasted TX: "+this.unBroadcastedTXs.length)
             fs.writeFileSync("fileTXs.unBroadcasted.json",JSON.stringify(this.unBroadcastedTXs))
-        }else console.log("All TX Broadcasted")
+        }else console.log(" All TX Broadcasted")
     })
 }
 
@@ -109,16 +117,16 @@ Hammer.prototype.broadcast_continue = function(){
     var TXs = JSON.parse(fs.readFileSync("fileTXs.unBroadcasted.json"))
     return Promise.all(TXs.map((fileTX)=>{
                 return new Promise((resolve,reject)=>{
-                    console.log("Broadcasting "+fileTX.hash)
+                    console.log(" Broadcasting "+fileTX.hash)
                     insight.broadcast(fileTX.toString(),(err,res)=>{
                         if(err){
-                            console.log("Insight API return Errors")
-                            console.log("You may want to upload/replace fileTX:"+fileTX.hash)
+                            console.log(" Insight API return Errors")
+                            console.log(" You may want to upload/replace fileTX:"+fileTX.hash)
                             //fs.writeFileSync(fileTX.hash,fileTX.toString())
                             this.unBroadcastedTXs.push({TXID:fileTX.hash,TX:fileTX.toString(),reason:err.message})
                             resolve()
                         }else{
-                            console.log(fileTX.hash + " Broadcasted")
+                            console.log(" "+fileTX.hash + " Broadcasted")
                             resolve()
                         }
                     })
@@ -126,9 +134,9 @@ Hammer.prototype.broadcast_continue = function(){
             })
         ).then(()=>{
         if(this.unBroadcastedTXs.length>0){
-            console.log("unBroadcasted TX: "+this.unBroadcastedTXs.length)
+            console.log(" unBroadcasted TX: "+this.unBroadcastedTXs.length)
             fs.writeFileSync("fileTXs.unBroadcasted.json",JSON.stringify(this.unBroadcastedTXs))
-        }else console.log("All TX Broadcasted")
+        }else console.log(" All TX Broadcasted")
     })
 }
 
@@ -250,7 +258,7 @@ Hammer.prototype.buildMapTX = function(){
     tx.to(this.privKey.toAddress(), tx.inputAmount - tx.outputAmount - 2 * tx.toString().length - 200)
     */
     if(tx.inputAmount-tx.outputAmount < tx.toString().length){
-        console.log("Insuffient Input Amount")
+        console.log(" Insuffient Input Amount")
     }
     // Sign
     tx.sign(this.privKey)
@@ -300,7 +308,7 @@ Hammer.prototype.saveFileTXs = function(){
         fs.renameSync('fileTXs.json','fileTXs.old.json')
     }
     this.fileTXs.forEach(fileTX=>{
-        console.log("Saving " + fileTX.hash + " to fileTXs.json")
+        console.log(" Saving " + fileTX.hash + " to fileTXs.json")
         TXs[fileTX.hash]=fileTX.toString()
     })
     fs.writeFileSync('fileTXs.json',JSON.stringify(TXs, null, 4))
@@ -379,9 +387,11 @@ Hammer.prototype.reduceSitemap = function(){
                 })
                 return
             }).then(()=>{
-                if(chunks.every(txid=>txid.length==64)){
-                    fileinfo.txid = chunks
+                for(var chunk=0;chunk<chunks.length; chunk++){
+                    if(!chunks[chunk])return
                 }
+                console.log(" "+murl +" Found on chain")
+                fileinfo.txid = chunks
                 return
             }))
         })
