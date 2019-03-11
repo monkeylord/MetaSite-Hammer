@@ -1,0 +1,34 @@
+{
+  "name": "metasite-hammer",
+  "version": "1.0.0",
+  "description": "A metanet tool to upload static website to blockchain.",
+  "main": "Index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monkeylord/MetaSite-Hammer.git"
+  },
+  "keywords": [
+    "bitcoin",
+    "metanet",
+    "metasite",
+    "bsv",
+    "website",
+    "tool"
+  ],
+  "author": "Monkeylord",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/monkeylord/MetaSite-Hammer/issues"
+  },
+  "homepage": "https://github.com/monkeylord/MetaSite-Hammer#readme",
+  "dependencies": {
+    "bitcoin-ibe": "^1.2.2",
+    "bitcore-explorers": "^1.0.1",
+    "bsv": "^0.24.8",
+    "mime": "^2.4.0",
+    "node-fetch": "^2.3.0"
+  }
+}
