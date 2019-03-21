@@ -41,7 +41,7 @@ function Hammer(opts){
 
 Hammer.prototype.throwout = function(){
     console.log("[+]Indexing files in " + this.path)
-    this.index().then(()=>{
+    return this.index().then(()=>{
         console.log("[+]Searching existing files on blockchain")
         return this.reduceSitemap()
     }).then(()=>{
@@ -92,8 +92,7 @@ Hammer.prototype.broadcast = function(){
                     console.log(" Broadcasting "+fileTX.hash)
                     insight.broadcast(fileTX.toString(),(err,res)=>{
                         if(err){
-                            console.log(" Insight API return Errors")
-                            console.log(" You may want to upload/replace fileTX:"+fileTX.hash)
+                            console.log(" Failed to broadcast " + fileTX.hash + ", Code: " + err.message.code + " reason:" + err.message.message.slice(0,100))
                             //fs.writeFileSync(fileTX.hash,fileTX.toString())
                             this.unBroadcastedTXs.push({TXID:fileTX.hash,TX:fileTX.toString(),reason:err.message})
                             resolve()
@@ -107,26 +106,27 @@ Hammer.prototype.broadcast = function(){
         )
     }).then(()=>{
         if(this.unBroadcastedTXs.length>0){
-            console.log(" unBroadcasted TX: "+this.unBroadcastedTXs.length)
-            fs.writeFileSync("fileTXs.unBroadcasted.json",JSON.stringify(this.unBroadcastedTXs))
+            console.log(" unBroadcasted TXs: "+this.unBroadcastedTXs.length)
+            fs.writeFileSync("TXs.unBroadcasted.json",JSON.stringify(this.unBroadcastedTXs))
+            console.log(" unBroadcasted TXs are saved to TXs.unBroadcasted.json")
         }else console.log(" All TX Broadcasted")
     })
 }
 
 Hammer.prototype.broadcast_continue = function(){
-    var TXs = JSON.parse(fs.readFileSync("fileTXs.unBroadcasted.json"))
+    console.log("[+]Broadcasting TXs in TXs.unBroadcasted.json")
+    var TXs = JSON.parse(fs.readFileSync("TXs.unBroadcasted.json"))
     return Promise.all(TXs.map((fileTX)=>{
                 return new Promise((resolve,reject)=>{
-                    console.log(" Broadcasting "+fileTX.hash)
-                    insight.broadcast(fileTX.toString(),(err,res)=>{
+                    console.log(" Broadcasting "+fileTX.TXID)
+                    insight.broadcast(fileTX.TX,(err,res)=>{
                         if(err){
-                            console.log(" Insight API return Errors")
-                            console.log(" You may want to upload/replace fileTX:"+fileTX.hash)
+                            console.log(" Failed to broadcast " + fileTX.TXID + ", Code: " + err.message.code + " reason:" + err.message.message.slice(0,100))
                             //fs.writeFileSync(fileTX.hash,fileTX.toString())
-                            this.unBroadcastedTXs.push({TXID:fileTX.hash,TX:fileTX.toString(),reason:err.message})
+                            this.unBroadcastedTXs.push({TXID:fileTX.TXID,TX:fileTX.TX,reason:err.message})
                             resolve()
                         }else{
-                            console.log(" "+fileTX.hash + " Broadcasted")
+                            console.log(" "+fileTX.TXID + " Broadcasted")
                             resolve()
                         }
                     })
@@ -135,8 +135,11 @@ Hammer.prototype.broadcast_continue = function(){
         ).then(()=>{
         if(this.unBroadcastedTXs.length>0){
             console.log(" unBroadcasted TX: "+this.unBroadcastedTXs.length)
-            fs.writeFileSync("fileTXs.unBroadcasted.json",JSON.stringify(this.unBroadcastedTXs))
-        }else console.log(" All TX Broadcasted")
+            fs.writeFileSync("TXs.unBroadcasted.json",JSON.stringify(this.unBroadcastedTXs))
+        }else {
+            console.log(" All TX Broadcasted")
+            fs.unlinkSync("TXs.unBroadcasted.json");
+        }
     })
 }
 
