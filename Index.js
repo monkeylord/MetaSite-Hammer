@@ -49,6 +49,7 @@ Hammer.prototype.throwout = function(){
         return this.build()
     }).then(()=>{
         console.log("[+]Saving Sitemap to sitemap.json")
+        this.saveFileTXs()
         this.saveSitemap()
         console.log("[+]Broadcasting upload transactions")
         return this.broadcast()
