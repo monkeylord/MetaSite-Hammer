@@ -304,7 +304,7 @@ Hammer.prototype.saveSitemap = function(){
     fs.writeFileSync("sitemap.json",JSON.stringify(this.trimSitemap(this.sitemap),null,4))
 }
 
-Hammer.prototype.saveFileTXs = function(){
+Hammer.prototype.saveFileTXstoJSON = function(){
     var TXs = {}
     if(fs.existsSync('fileTXs.json')){
         TXs=JSON.parse(fs.readFileSync('fileTXs.json').toString())
@@ -315,6 +315,17 @@ Hammer.prototype.saveFileTXs = function(){
         TXs[fileTX.hash]=fileTX.toString()
     })
     fs.writeFileSync('fileTXs.json',JSON.stringify(TXs, null, 4))
+}
+
+Hammer.prototype.saveFileTXs = function(){
+    var TXs = {}
+    if(!fs.existsSync('Transactions')){
+        fs.mkdirSync('Transactions')
+    }
+    this.fileTXs.forEach(fileTX=>{
+        console.log(" Saving " + fileTX.hash + " to /Transactions")
+        fs.writeFileSync('./Transactions/'+fileTX.hash, fileTX.toString())
+    })
 }
 
 Hammer.prototype.getUtxos = function(){
